@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+<title>The Pulse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Figtree', Arial, sans-serif; background: #F4EDEF; color: #401E2A; }
+
+  /* ── Config panel ── */
+  .config-wrap { background: #401E2A; padding: 0; overflow: hidden; border-radius: 0 0 10px 10px; margin-bottom: 20px; }
+  .config-toggle { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; cursor: pointer; }
+  .config-toggle span { font-size: 12px; color: #DCC7BE; font-weight: 600; letter-spacing: 0.5px; }
+  .config-toggle .arr { color: #B38693; font-size: 11px; }
+  .config-inner { padding: 0 18px 16px; display: none; }
+  .config-inner.open { display: block; }
+  .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .config-grid input { padding: 7px 10px; font-size: 12px; border-radius: 6px; border: none; font-family: inherit; width: 100%; color: #401E2A; }
+  .config-grid input:focus { outline: 2px solid #B38693; }
+  .config-hint { font-size: 11px; color: #B38693; margin-bottom: 8px; line-height: 1.5; }
+  .config-row { display: flex; align-items: center; gap: 10px; }
+  .btn-connect { font-size: 12px; color: #fff; background: #80515F; border: none; border-radius: 6px; padding: 7px 16px; cursor: pointer; font-family: inherit; }
+  .btn-connect:hover { background: #5F3C46; }
+  .config-status { font-size: 11px; min-height: 16px; }
+  .status-ok { color: #9FE1CB; }
+  .status-err { color: #F09595; }
+  .status-connecting { color: #B38693; font-style: italic; }
+
+  /* ── Newsletter ── */
+  .nl { background: #fff; border-radius: 12px; overflow: hidden; max-width: 700px; margin: 0 auto; border: 1px solid #DCC7BE; }
+
+  /* ── Header ── */
+  .nl-hdr { background: #80515F; padding: 28px 32px; text-align: center; }
+  .nl-hdr .logo-wrap { margin-bottom: 10px; }
+  .nl-hdr .logo-wrap img { max-height: 44px; max-width: 140px; border-radius: 4px; }
+  .nl-hdr h1 { color: #fff; font-size: 36px; font-weight: 600; letter-spacing: 5px; }
+  .nl-hdr .sub { color: #DCC7BE; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; margin-top: 5px; }
+  .nl-hdr .iss { color: #B38693; font-size: 11px; margin-top: 4px; font-style: italic; }
+
+  /* ── Reactions ── */
+  .reactions { display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: #F4EDEF; border-bottom: 1px solid #DCC7BE; flex-wrap: wrap; }
+  .reactions-lbl { font-size: 10px; color: #B38693; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-right: 4px; }
+  .rx-btn { display: inline-flex; align-items: center; gap: 4px; background: #fff; border: 1px solid #DCC7BE; border-radius: 20px; padding: 4px 11px; cursor: pointer; font-size: 13px; font-family: inherit; transition: all 0.15s; color: #401E2A; }
+  .rx-btn:hover { border-color: #80515F; }
+  .rx-btn.on { background: #80515F; color: #fff; border-color: #80515F; }
+  .rx-btn .rc { font-size: 11px; font-weight: 600; }
+
+  /* ── Body ── */
+  .nl-body { padding: 24px 32px; }
+  .nl-sec { margin-bottom: 26px; }
+  .sec-lbl { font-size: 10px; font-weight: 600; color: #B38693; text-transform: uppercase; letter-spacing: 1.5px; }
+  .sec-rule { border: none; border-top: 2px solid #DCC7BE; margin: 4px 0 13px; }
+  .nl-sec h2 { font-size: 19px; font-weight: 400; color: #80515F; margin-bottom: 11px; }
+  .nl-sec h3 { font-size: 12px; font-weight: 600; color: #5F3C46; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .nl-sec p { color: #5F3C46; line-height: 1.7; font-size: 13px; margin-bottom: 6px; }
+  .nl-sec a { color: #80515F; }
+  .nl-sec ul { padding-left: 18px; }
+  .nl-sec ul li { color: #5F3C46; font-size: 13px; line-height: 1.7; }
+
+  /* ── Quip ── */
+  .quip { background: #F4EDEF; border-left: 4px solid #80515F; padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 20px; }
+  .quip .ql { font-size: 10px; font-weight: 600; color: #5F3C46; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .quip p { color: #5F3C46; font-style: italic; font-size: 13px; line-height: 1.7; }
+
+  /* ── Sprint ── */
+  .sprint { background: #F4EDEF; border-radius: 6px; padding: 11px 15px; margin-bottom: 10px; }
+  .sprint-name { font-size: 11px; font-weight: 600; color: #80515F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+
+  /* ── Accolades ── */
+  .acc-card { display: flex; gap: 13px; padding: 14px; border: 1px solid #F4EDEF; border-radius: 10px; margin-bottom: 10px; background: #fff; box-shadow: 0 1px 4px rgba(64,30,42,0.06); }
+  .acc-av { width: 42px; height: 42px; min-width: 42px; border-radius: 50%; background: #80515F; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; overflow: hidden; }
+  .acc-av img { width: 100%; height: 100%; object-fit: cover; }
+  .acc-info { flex: 1; min-width: 0; }
+  .acc-name { font-size: 13px; font-weight: 600; color: #401E2A; }
+  .acc-role { font-size: 11px; color: #B38693; margin-bottom: 4px; }
+  .acc-text { font-size: 12px; color: #5F3C46; line-height: 1.6; margin-bottom: 9px; }
+  .kudos-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .kudos-btn { display: inline-flex; align-items: center; gap: 4px; background: #F4EDEF; border: 1px solid #DCC7BE; border-radius: 20px; padding: 4px 12px; cursor: pointer; font-size: 12px; font-family: inherit; color: #5F3C46; transition: all 0.15s; }
+  .kudos-btn:hover { border-color: #80515F; }
+  .kudos-btn.given { background: #80515F; color: #fff; border-color: #80515F; }
+  .kudos-ct { font-size: 11px; color: #B38693; }
+  .kudos-who { font-size: 11px; color: #B38693; font-style: italic; margin-top: 3px; }
+
+  /* ── Process ── */
+  .proc-box { background: #F4EDEF; border-left: 4px solid #5F3C46; border-radius: 0 8px 8px 0; padding: 13px 17px; margin-bottom: 10px; }
+  .proc-topic { font-size: 13px; font-weight: 600; color: #5F3C46; margin-bottom: 4px; }
+
+  /* ── Releases ── */
+  .rel-link { display: block; padding: 8px 0; border-bottom: 1px solid #DCC7BE; color: #80515F; font-size: 13px; text-decoration: none; }
+  .rel-link:last-child { border-bottom: none; }
+
+  /* ── Hire card ── */
+  .hire-card { border: 1px solid #F4EDEF; border-radius: 10px; padding: 14px; margin-bottom: 12px; background: #fff; box-shadow: 0 1px 4px rgba(64,30,42,0.06); }
+  .hire-name { font-size: 14px; font-weight: 600; color: #401E2A; }
+  .hire-role { font-size: 11px; color: #B38693; margin-bottom: 5px; }
+  .hire-bio { font-size: 13px; color: #5F3C46; margin-bottom: 10px; line-height: 1.6; }
+
+  /* ── Fun Q ── */
+  .funq-wrap { background: #F4EDEF; border-radius: 8px; padding: 12px 14px; }
+  .funq-lbl { font-size: 10px; font-weight: 600; color: #B38693; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .funq-item { margin-bottom: 14px; }
+  .funq-item:last-child { margin-bottom: 0; }
+  .funq-q { font-size: 12px; font-weight: 600; color: #5F3C46; margin-bottom: 3px; }
+  .funq-a { font-size: 12px; color: #B38693; font-style: italic; margin-bottom: 7px; padding-left: 9px; border-left: 3px solid #DCC7BE; line-height: 1.5; }
+  .funq-responses { margin-bottom: 7px; }
+  .funq-resp-item { font-size: 11px; color: #5F3C46; padding: 5px 9px; background: #fff; border-radius: 5px; margin-bottom: 4px; line-height: 1.5; }
+  .funq-resp-item .ra { font-weight: 600; color: #80515F; }
+  .funq-input-row { display: flex; gap: 7px; }
+  .funq-input-row input { flex: 1; padding: 6px 9px; font-size: 12px; border: 1px solid #DCC7BE; border-radius: 6px; font-family: inherit; color: #401E2A; background: #fff; }
+  .funq-input-row input:focus { outline: none; border-color: #80515F; }
+  .funq-submit { font-size: 11px; color: #fff; background: #80515F; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .funq-submit:hover { background: #5F3C46; }
+
+  /* ── Image ── */
+  .nl-img { margin: 12px 0; text-align: center; }
+  .nl-img img { max-width: 100%; border-radius: 6px; }
+  .nl-img .cap { font-size: 11px; color: #B38693; margin-top: 4px; font-style: italic; }
+
+  /* ── Footer ── */
+  .nl-ftr { background: #F4EDEF; padding: 18px 32px; text-align: center; border-top: 1px solid #DCC7BE; }
+  .nl-ftr p { font-size: 11px; color: #B38693; line-height: 1.8; }
+
+  /* ── Toast ── */
+  .toast { position: fixed; bottom: 20px; right: 20px; background: #401E2A; color: #fff; font-size: 12px; padding: 10px 18px; border-radius: 8px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; border-radius: 8px; }
+  .toast.show { opacity: 1; }
+
+  /* ── User prompt ── */
+  .user-prompt { background: #fff; border: 1px solid #DCC7BE; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .user-prompt input { flex: 1; padding: 7px 10px; font-size: 13px; border: 1px solid #DCC7BE; border-radius: 6px; font-family: inherit; color: #401E2A; }
+  .user-prompt input:focus { outline: none; border-color: #80515F; }
+  .user-prompt button { font-size: 12px; color: #fff; background: #80515F; border: none; border-radius: 6px; padding: 7px 14px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .user-prompt button:hover { background: #5F3C46; }
+  .user-prompt label { font-size: 12px; color: #5F3C46; white-space: nowrap; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ── SharePoint Config (collapsible) ──────────────────────────────── -->
+<div class="config-wrap">
+  <div class="config-toggle" onclick="toggleConfig()">
+    <span>⚙ SharePoint Connection</span>
+    <span class="arr" id="cfg-arr">▾</span>
+  </div>
+  <div class="config-inner" id="cfg-inner">
+    <p class="config-hint">Enter your Azure App Registration details once. Settings are saved in this browser.</p>
+    <div class="config-grid">
+      <input type="text" id="cfg-tenant" placeholder="Tenant ID">
+      <input type="text" id="cfg-client" placeholder="Client ID">
+      <input type="password" id="cfg-secret" placeholder="Client Secret">
+      <input type="text" id="cfg-site" placeholder="SharePoint Site URL">
+    </div>
+    <div class="config-row">
+      <button class="btn-connect" onclick="connectSP()">Connect</button>
+      <span class="config-status" id="cfg-status">Not connected — running in demo mode</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Your name (for kudos & responses) ────────────────────────────── -->
+<div class="user-prompt" id="user-prompt">
+  <label>Your name:</label>
+  <input type="text" id="user-name" placeholder="Enter your name to give kudos and respond">
+  <button onclick="saveName()">Save</button>
+</div>
+
+<!-- ── Newsletter ──────────────────────────────────────────────────── -->
+<div class="nl">
+
+  <!-- Header -->
+  <div class="nl-hdr">
+    <div class="logo-wrap" id="logo-wrap" style="display:none;"><img id="nl-logo" src="" alt="Logo"></div>
+    <h1>THE PULSE</h1>
+    <div class="sub">Lucina Product Team &nbsp;&bull;&nbsp; Monthly Newsletter</div>
+    <div class="iss" id="nl-issue">[Month Year] &nbsp;&bull;&nbsp; Issue #1</div>
+  </div>
+
+  <!-- Reactions -->
+  <div class="reactions">
+    <span class="reactions-lbl">React</span>
+    <button class="rx-btn" id="rx-fire" onclick="react('fire')">🔥 <span class="rc" id="rc-fire">0</span></button>
+    <button class="rx-btn" id="rx-heart" onclick="react('heart')">❤️ <span class="rc" id="rc-heart">0</span></button>
+    <button class="rx-btn" id="rx-clap" onclick="react('clap')">👏 <span class="rc" id="rc-clap">0</span></button>
+    <button class="rx-btn" id="rx-mind" onclick="react('mind')">🤯 <span class="rc" id="rc-mind">0</span></button>
+    <button class="rx-btn" id="rx-star" onclick="react('star')">⭐ <span class="rc" id="rc-star">0</span></button>
+  </div>
+
+  <div class="nl-body">
+
+    <!-- ══ PASTE CONTENT BELOW THIS LINE EACH MONTH ══════════════════ -->
+
+    <!-- FROM THE DESK OF PRODUCT -->
+    <div class="quip">
+      <div class="ql">From the Desk of Product</div>
+      <p id="nl-quip">The Pulse is officially alive — and we couldn't be more excited to share it with you. We do a lot of great work that doesn't always get the visibility it deserves, and that ends now. This is your monthly front-row seat to everything the product team is building, shipping, and celebrating together.</p>
+    </div>
+
+    <!-- PRODUCT UPDATES -->
+    <div class="nl-sec">
+      <div class="sec-lbl">Product Updates</div><hr class="sec-rule">
+      <h2>What we shipped</h2>
+      <div class="sprint">
+        <div class="sprint-name">Sprint [X] &bull; [Dates]</div>
+        <ul>
+          <li>[Feature or fix #1]</li>
+          <li>[Feature or fix #2]</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- WHAT'S NEXT -->
+    <div class="nl-sec">
+      <div class="sec-lbl">What's Next</div><hr class="sec-rule">
+      <h2>Looking ahead</h2>
+      <div class="sprint">
+        <div class="sprint-name">Sprint [X+1] &bull; [Dates]</div>
+        <ul>
+          <li>[Planned item #1]</li>
+          <li>[Planned item #2]</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ACCOLADES -->
+    <div class="nl-sec">
+      <div class="sec-lbl">Accolades</div><hr class="sec-rule">
+      <h2>Spotlights &amp; shoutouts</h2>
+
+      <!-- ACCOLADE — copy this block per person, change acc-1 to acc-2 etc -->
+      <div class="acc-card" data-pid="acc-1">
+        <div class="acc-av" id="av-acc-1">LL</div>
+        <div class="acc-info">
+          <div class="acc-name">[Name]</div>
+          <div class="acc-role">[Role]</div>
+          <div class="acc-text">[Recognition — be specific and genuine.]</div>
+          <div class="kudos-row">
+            <button class="kudos-btn" id="kb-acc-1" onclick="giveKudos('acc-1','[Name]')">👏 Give kudos</button>
+            <span class="kudos-ct" id="kc-acc-1">0 kudos</span>
+          </div>
+          <div class="kudos-who" id="kw-acc-1"></div>
+        </div>
+      </div>
+
+      <div class="acc-card" data-pid="acc-2">
+        <div class="acc-av" id="av-acc-2">SR</div>
+        <div class="acc-info">
+          <div class="acc-name">[Name 2]</div>
+          <div class="acc-role">[Role]</div>
+          <div class="acc-text">[Recognition.]</div>
+          <div class="kudos-row">
+            <button class="kudos-btn" id="kb-acc-2" onclick="giveKudos('acc-2','[Name 2]')">👏 Give kudos</button>
+            <span class="kudos-ct" id="kc-acc-2">0 kudos</span>
+          </div>
+          <div class="kudos-who" id="kw-acc-2"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PROCESS CORNER -->
+    <div class="nl-sec">
+      <div class="sec-lbl">Lindsay's Process Corner</div><hr class="sec-rule">
+      <div class="proc-box">
+        <div class="proc-topic">[Topic name]</div>
+        <p>[Process explanation.]</p>
+      </div>
+    </div>
+
+    <!-- RELEASE NOTES -->
+    <div class="nl-sec">
+      <div class="sec-lbl">Release Notes</div><hr class="sec-rule">
+      <h2>Recent releases</h2>
+      <a href="#" class="rel-link">&rarr; Release v[X.X] &mdash; [Description]</a>
+      <a href="#" class="rel-link">&rarr; Release v[X.X] &mdash; [Description]</a>
+    </div>
+
+    <!-- TEAM -->
+    <div class="nl-sec">
+      <div class="sec-lbl">Team</div><hr class="sec-rule">
+      <h2>Welcomes, milestones &amp; moments</h2>
+      <h3>New faces</h3>
+
+      <!-- NEW HIRE — copy this block per hire, change hire-1 to hire-2 etc -->
+      <div class="hire-card" data-hid="hire-1">
+        <div class="hire-name">[New Hire Name]</div>
+        <div class="hire-role">[Role]</div>
+        <div class="hire-bio">[About them — 1 sentence.]</div>
+        <div class="funq-wrap">
+          <div class="funq-lbl">Fun questions</div>
+
+          <div class="funq-item">
+            <div class="funq-q">Coffee, tea, or chaos (energy drinks)?</div>
+            <div class="funq-a">[Their answer]</div>
+            <div class="funq-responses" id="fr-hire-1-q1"></div>
+            <div class="funq-input-row">
+              <input type="text" id="fi-hire-1-q1" placeholder="What's your answer?">
+              <button class="funq-submit" onclick="submitFQ('hire-1','q1')">Share</button>
+            </div>
+          </div>
+
+          <div class="funq-item">
+            <div class="funq-q">Do you close your apps when you're done, or let them pile up?</div>
+            <div class="funq-a">[Their answer]</div>
+            <div class="funq-responses" id="fr-hire-1-q2"></div>
+            <div class="funq-input-row">
+              <input type="text" id="fi-hire-1-q2" placeholder="What's your answer?">
+              <button class="funq-submit" onclick="submitFQ('hire-1','q2')">Share</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <h3 style="margin-top:16px;">From the chat</h3>
+      <p>[Fun team moment or highlight from this month.]</p>
+    </div>
+
+    <!-- ══ END OF MONTHLY CONTENT ════════════════════════════════════ -->
+
+  </div>
+
+  <div class="nl-ftr">
+    <p>The Pulse is published monthly by the Lucina Product Team.</p>
+    <p>Questions or contributions? Reach out to the Product team.</p>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ISSUE = 'pulse-v1'; // ← Change this each month (e.g. pulse-v2, pulse-v3)
+let SP = { ok: false, token: null, expiry: 0, siteId: null, lists: {} };
+let me = localStorage.getItem('pulse_username') || '';
+let local = {};
+
+// ── Boot ──────────────────────────────────────────────────────────────
+try { local = JSON.parse(localStorage.getItem('pulse_local_' + ISSUE) || '{}'); } catch(e) {}
+
+(function boot() {
+  // Restore name
+  if (me) {
+    document.getElementById('user-name').value = me;
+    document.getElementById('user-prompt').style.opacity = '0.6';
+  }
+  // Restore config fields
+  try {
+    const cfg = JSON.parse(localStorage.getItem('pulse_cfg') || '{}');
+    if (cfg.t) { document.getElementById('cfg-tenant').value = cfg.t; document.getElementById('cfg-client').value = cfg.c; document.getElementById('cfg-secret').value = '••••••'; document.getElementById('cfg-site').value = cfg.s; connectSP(true); }
+  } catch(e) {}
+  renderLocal();
+})();
+
+function saveLocal() { try { localStorage.setItem('pulse_local_' + ISSUE, JSON.stringify(local)); } catch(e) {} }
+function saveName() { me = document.getElementById('user-name').value.trim(); localStorage.setItem('pulse_username', me); document.getElementById('user-prompt').style.opacity = '0.6'; showToast('Name saved — you\'re all set!'); }
+
+// ── Config toggle ─────────────────────────────────────────────────────
+function toggleConfig() {
+  const inner = document.getElementById('cfg-inner');
+  const arr = document.getElementById('cfg-arr');
+  const open = inner.classList.toggle('open');
+  arr.textContent = open ? '▴' : '▾';
+}
+
+// ── SharePoint auth ───────────────────────────────────────────────────
+async function connectSP(silent) {
+  const t = document.getElementById('cfg-tenant').value.trim();
+  const c = document.getElementById('cfg-client').value.trim();
+  const s = document.getElementById('cfg-secret').value.trim();
+  const site = document.getElementById('cfg-site').value.trim();
+  if (!t || !c || !site) { setStatus('Please fill in all fields.', 'err'); return; }
+  if (!silent) setStatus('Connecting…', 'connecting');
+  try {
+    const res = await fetch('https://login.microsoftonline.com/' + t + '/oauth2/v2.0/token', {
+      method: 'POST',
+      body: new URLSearchParams({ grant_type: 'client_credentials', client_id: c, client_secret: s !== '••••••' ? s : (JSON.parse(localStorage.getItem('pulse_cfg')||'{}').secret||''), scope: 'https://graph.microsoft.com/.default' })
+    });
+    const d = await res.json();
+    if (d.access_token) {
+      SP.ok = true; SP.token = d.access_token; SP.expiry = Date.now() + (d.expires_in - 60) * 1000;
+      try { localStorage.setItem('pulse_cfg', JSON.stringify({ t, c, secret: s !== '••••••' ? s : JSON.parse(localStorage.getItem('pulse_cfg')||'{}').secret, s: site })); } catch(e) {}
+      setStatus('● Connected to SharePoint', 'ok');
+      if (!silent) { toggleConfig(); showToast('Connected!'); }
+      await setupLists(site);
+      await loadAll();
+    } else { setStatus('Failed: ' + (d.error_description || d.error || 'Unknown'), 'err'); }
+  } catch(e) { setStatus('Error: ' + e.message, 'err'); }
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('cfg-status');
+  el.textContent = msg;
+  el.className = 'config-status' + (type ? ' status-' + type : '');
+}
+
+async function gql(path, method, body) {
+  if (SP.expiry && Date.now() > SP.expiry) await connectSP(true);
+  const opts = { method: method || 'GET', headers: { Authorization: 'Bearer ' + SP.token, 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch('https://graph.microsoft.com/v1.0' + path, opts);
+  return method === 'DELETE' ? null : r.json();
+}
+
+// ── List setup ────────────────────────────────────────────────────────
+async function setupLists(siteUrl) {
+  try {
+    const u = siteUrl.replace(/https?:\/\//, '');
+    const parts = u.split('/'); const host = parts[0]; const path = '/' + parts.slice(1).join('/');
+    const sd = await gql('/sites/' + host + ':' + path);
+    SP.siteId = sd.id;
+    const existing = {};
+    const ld = await gql('/sites/' + SP.siteId + '/lists?$select=id,name');
+    ld.value.forEach(l => { existing[l.name] = l.id; });
+    const lists = [
+      { name: 'PulseRx', cols: ['IssueId','Emoji','UserName'] },
+      { name: 'PulseKudos', cols: ['IssueId','PersonId','PersonName','GivenBy'] },
+      { name: 'PulseFunQ', cols: ['IssueId','HireId','QuestionId','Author','Response'] },
+    ];
+    for (const list of lists) {
+      if (!existing[list.name]) {
+        const cr = await gql('/sites/' + SP.siteId + '/lists', 'POST', { displayName: list.name, list: { template: 'genericList' } });
+        SP.lists[list.name] = cr.id;
+        for (const col of list.cols) await gql('/sites/' + SP.siteId + '/lists/' + cr.id + '/columns', 'POST', { name: col, text: {} });
+      } else { SP.lists[list.name] = existing[list.name]; }
+    }
+  } catch(e) { console.warn('List setup:', e); }
+}
+
+async function addItem(list, fields) { return gql('/sites/' + SP.siteId + '/lists/' + SP.lists[list] + '/items', 'POST', { fields }); }
+async function getItems(list, filter) {
+  const q = filter ? '?$filter=' + encodeURIComponent(filter) + '&$expand=fields' : '?$expand=fields';
+  return gql('/sites/' + SP.siteId + '/lists/' + SP.lists[list] + '/items' + q);
+}
+
+// ── Load all on connect ───────────────────────────────────────────────
+async function loadAll() {
+  try { await Promise.all([loadRx(), loadAllKudos(), loadAllFQ()]); } catch(e) {}
+}
+
+// ── Reactions ─────────────────────────────────────────────────────────
+let myRx = new Set(local.myRx || []);
+
+async function react(type) {
+  if (!me) { showToast('Enter your name first!'); return; }
+  const was = myRx.has(type);
+  was ? myRx.delete(type) : myRx.add(type);
+  document.getElementById('rx-' + type).classList.toggle('on', !was);
+  local.myRx = [...myRx]; saveLocal();
+  if (SP.ok) { try { await addItem('PulseRx', { IssueId: ISSUE, Emoji: type, UserName: me }); await loadRx(); } catch(e) { bumpRx(type, !was); } }
+  else bumpRx(type, !was);
+}
+
+function bumpRx(type, add) { const el = document.getElementById('rc-' + type); if (el) el.textContent = Math.max(0, parseInt(el.textContent) + (add ? 1 : -1)); }
+
+async function loadRx() {
+  if (!SP.ok) return;
+  try {
+    const d = await getItems('PulseRx', "fields/IssueId eq '" + ISSUE + "'");
+    const counts = {};
+    d.value.forEach(i => { const t = i.fields.Emoji; counts[t] = (counts[t]||0) + 1; });
+    ['fire','heart','clap','mind','star'].forEach(t => { const el = document.getElementById('rc-' + t); if (el) el.textContent = counts[t] || 0; });
+  } catch(e) {}
+}
+
+// ── Kudos ─────────────────────────────────────────────────────────────
+let myKudos = new Set(local.myKudos || []);
+
+async function giveKudos(pid, pname) {
+  if (!me) { showToast('Enter your name first!'); return; }
+  if (myKudos.has(pid)) { showToast('You already gave kudos to ' + pname + '!'); return; }
+  myKudos.add(pid); local.myKudos = [...myKudos]; saveLocal();
+  document.getElementById('kb-' + pid).classList.add('given');
+  showToast('👏 Kudos given to ' + pname + '!');
+  if (SP.ok) { try { await addItem('PulseKudos', { IssueId: ISSUE, PersonId: pid, PersonName: pname, GivenBy: me }); await loadKudos(pid); } catch(e) { bumpKudos(pid); } }
+  else bumpKudos(pid);
+}
+
+function bumpKudos(pid) {
+  const ct = document.getElementById('kc-' + pid); if (ct) { const c = parseInt(ct.textContent)||0; ct.textContent = (c+1) + ' kudos'; }
+  const who = document.getElementById('kw-' + pid); if (who) who.textContent = 'Including you!';
+}
+
+async function loadAllKudos() { document.querySelectorAll('[data-pid]').forEach(c => loadKudos(c.dataset.pid)); }
+
+async function loadKudos(pid) {
+  if (!SP.ok) return;
+  try {
+    const d = await getItems('PulseKudos', "fields/IssueId eq '" + ISSUE + "' and fields/PersonId eq '" + pid + "'");
+    const ct = document.getElementById('kc-' + pid); if (ct) ct.textContent = d.value.length + ' kudos';
+    const names = d.value.map(i => i.fields.GivenBy).filter(Boolean);
+    const who = document.getElementById('kw-' + pid); if (who && names.length) who.textContent = names.slice(0,3).join(', ') + (names.length > 3 ? ' +' + (names.length-3) + ' more' : '');
+    if (myKudos.has(pid)) { const btn = document.getElementById('kb-' + pid); if (btn) btn.classList.add('given'); }
+  } catch(e) {}
+}
+
+// ── Fun Q ─────────────────────────────────────────────────────────────
+async function submitFQ(hid, qid) {
+  if (!me) { showToast('Enter your name first!'); return; }
+  const inp = document.getElementById('fi-' + hid + '-' + qid);
+  const text = inp ? inp.value.trim() : '';
+  if (!text) return;
+  inp.value = '';
+  appendFQResp('fr-' + hid + '-' + qid, me, text);
+  local['fq_' + hid + '_' + qid] = local['fq_' + hid + '_' + qid] || [];
+  local['fq_' + hid + '_' + qid].push({ a: me, t: text });
+  saveLocal();
+  showToast('Response shared!');
+  if (SP.ok) { try { await addItem('PulseFunQ', { IssueId: ISSUE, HireId: hid, QuestionId: qid, Author: me, Response: text }); } catch(e) {} }
+}
+
+function appendFQResp(cid, author, text) {
+  const c = document.getElementById(cid); if (!c) return;
+  const d = document.createElement('div');
+  d.className = 'funq-resp-item';
+  d.innerHTML = '<span class="ra">' + escH(author) + ':</span> ' + escH(text);
+  c.appendChild(d);
+}
+
+async function loadAllFQ() {
+  if (!SP.ok) return;
+  try {
+    const d = await getItems('PulseFunQ', "fields/IssueId eq '" + ISSUE + "'");
+    d.value.forEach(i => { appendFQResp('fr-' + i.fields.HireId + '-' + i.fields.QuestionId, i.fields.Author, i.fields.Response); });
+  } catch(e) {}
+}
+
+function renderLocal() {
+  (local.myRx||[]).forEach(t => { const b = document.getElementById('rx-'+t); if (b) b.classList.add('on'); });
+  (local.myKudos||[]).forEach(pid => { const b = document.getElementById('kb-'+pid); if (b) b.classList.add('given'); });
+  Object.keys(local).filter(k => k.startsWith('fq_')).forEach(k => {
+    const parts = k.replace('fq_','').split('_');
+    (local[k]||[]).forEach(r => appendFQResp('fr-' + parts[0] + '-' + parts[1], r.a, r.t));
+  });
+}
+
+function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2800); }
+</script>
+</body>
+</html>
