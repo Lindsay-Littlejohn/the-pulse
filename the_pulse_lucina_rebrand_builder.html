@@ -278,6 +278,22 @@
       </div>
     </div>
   </div>
+
+  <!-- BIRTHDAYS -->
+  <div class="section-wrap" id="sec-birthdays">
+    <div class="section-head">
+      <div class="section-head-left" onclick="toggleSec('birthdays')">
+        <span class="sec-label">🎂 Birthdays</span>
+        <span class="sec-arrow" id="arr-birthdays">▾</span>
+      </div>
+      <button class="btn-remove-sec" onclick="removeSec('birthdays','Birthdays')">Remove section</button>
+    </div>
+    <div class="section-body" id="body-birthdays">
+      <p style="font-size:12px;color:#B38693;font-style:italic;margin-bottom:12px;">Add anyone celebrating a birthday this month. Leave empty to show a friendly placeholder.</p>
+      <div id="birthdays-wrap"></div>
+      <button class="btn-add" onclick="addBirthday()">+ Add birthday</button>
+    </div>
+  </div>
 </div>
 
 <div id="preview" class="panel">
@@ -808,6 +824,30 @@ function update() {
     }
   }
 
+  // Birthdays
+  if (!hidden('birthdays')) {
+    const bdayBlocks = document.querySelectorAll('#birthdays-wrap .dyn-block');
+    html += '<div class="prev-section"><div class="prev-label">Birthdays</div><hr class="prev-rule"><h2>🎂 Celebrating this month</h2>';
+    if (bdayBlocks.length) {
+      html += '<div style="display:flex;flex-wrap:wrap;gap:10px;">';
+      bdayBlocks.forEach(b => {
+        const bid = b.id.replace('blk-','');
+        const name = val(bid+'-name');
+        const date = val(bid+'-date');
+        if (!name) return;
+        html += '<div style="background:#F4EDEF;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;min-width:160px;flex:1;">'
+          + '<span style="font-size:24px;">🎂</span>'
+          + '<div><div style="font-weight:600;font-size:13px;color:#401E2A;">'+escH(name)+'</div>'
+          + (date ? '<div style="font-size:12px;color:#B38693;margin-top:2px;">'+escH(date)+'</div>' : '')
+          + '</div></div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<p style="font-size:13px;color:#B38693;font-style:italic;">No birthdays this month — but yours could be here! Reach out to Lindsay to make sure you\'re on the list.</p>';
+    }
+    html += '</div>';
+  }
+
   const pb = document.getElementById('pv-body');
   if (pb) pb.innerHTML = html || '<p class="empty" style="padding:20px 0;">Fill in the editor to see your newsletter preview.</p>';
 }
@@ -839,6 +879,7 @@ function collectState() {
     })(),
     galleryCards: collectBlocks('#gallery-cards-wrap', ['glabel','gurl','gicon'], null),
     funs: collectLineItems('#fun-wrap'),
+    birthdays: collectBlocks('#birthdays-wrap', ['name','date'], null),
   };
   return state;
 }
@@ -900,7 +941,7 @@ function restoreState(state) {
 
   // Restore hidden sections
   (state.hiddenSecs || []).forEach(k => {
-    const label = { lindsay:"From the Desk of Product", updates:"Product Updates", next:"What's Next", accolades:"Accolades", process:"Process Corner", releases:"Release Notes", team:"Team" }[k] || k;
+    const label = { lindsay:"From the Desk of Product", updates:"Product Updates", next:"What's Next", accolades:"Accolades", process:"Process Corner", releases:"Release Notes", team:"Team", birthdays:"Birthdays" }[k] || k;
     removeSec(k, label);
   });
 
@@ -959,6 +1000,16 @@ function restoreState(state) {
 
   // Restore gallery cards
   (state.galleryCards || []).forEach(s => { addGalleryCard(s); });
+
+  // Restore birthdays
+  (state.birthdays || []).forEach(s => {
+    addBirthday();
+    const blocks = document.querySelectorAll('#birthdays-wrap .dyn-block');
+    const b = blocks[blocks.length-1];
+    const bid = b.id.replace('blk-','');
+    if (s.name) document.getElementById(bid+'-name').value = s.name;
+    if (s.date) document.getElementById(bid+'-date').value = s.date;
+  });
 
   // Restore hires
   (state.hires || []).forEach(s => {
@@ -1134,6 +1185,7 @@ function wireHirePhoto(id) {
     addRelease(); addRelease();
     addHire();
     addLine('fun-wrap','A lighthearted moment or team highlight from this month');
+    // birthdays-wrap starts empty — no default placeholder needed
   }
 })();
 // ── Download ──────────────────────────────────────────────────────────
@@ -1270,6 +1322,25 @@ function removeLogo() {
   const pvl = document.getElementById('pv-logo-wrap');
   if (pvl) pvl.style.display = 'none';
   saveState && saveState();
+}
+
+// ── Birthday ──────────────────────────────────────────────────────────
+function addBirthday() {
+  const c = document.getElementById('birthdays-wrap');
+  const id = uid();
+  const div = document.createElement('div');
+  div.className = 'dyn-block';
+  div.id = 'blk-' + id;
+  div.innerHTML = '<div class="dyn-block-head">'
+    + '<span class="dyn-block-title">Birthday</span>'
+    + '<button class="btn-rm-block" onclick="rmEl(\'blk-' + id + '\')">✕ Remove</button>'
+    + '</div>'
+    + '<div class="two-col">'
+    + '<div><label>Name</label><input type="text" id="' + id + '-name" placeholder="e.g. Sarah Johnson" oninput="update()"></div>'
+    + '<div><label>Date</label><input type="text" id="' + id + '-date" placeholder="e.g. May 14" oninput="update()"></div>'
+    + '</div>';
+  c.appendChild(div);
+  update();
 }
 
 // ── Gallery Card ──────────────────────────────────────────────────────
