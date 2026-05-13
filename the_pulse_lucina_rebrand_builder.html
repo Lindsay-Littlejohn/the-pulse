@@ -152,8 +152,9 @@
     <div class="section-body" id="body-lindsay">
       <label>Opening quip / intro</label>
       <textarea id="quip" rows="3" placeholder="A short, quippy 2–3 sentence intro. Celebrate a win, tease what's inside, or acknowledge the team. Keep it human." oninput="update()"></textarea>
-      <div class="link-hint">Tip: highlight text in the box above, then use the inserter below to wrap it in a link.</div>
+      <div class="link-hint">Tip: highlight text above to wrap in a link, or use ↵ to start a new paragraph.</div>
       <div class="link-inserter">
+        <button class="btn-insert-link" style="background:#B38693;" onclick="insertBreak('quip')">↵ Line break</button>
         <span class="li-label">Insert link:</span>
         <input type="text" id="quip-link-text" placeholder="Link text">
         <input type="text" id="quip-link-url" placeholder="https://...">
@@ -332,6 +333,26 @@ function renderLinks(text) {
   });
 }
 
+// Split text on blank lines into multiple <p> tags; single newlines become <br>
+function renderParagraphs(text, extraClass) {
+  if (!text) return '';
+  const cls = extraClass ? ' class="' + extraClass + '"' : '';
+  return text.split(/\n\n+/).map(function(block) {
+    return '<p' + cls + '>' + renderLinks(block.replace(/\n/g, '<br>')) + '</p>';
+  }).join('');
+}
+
+// Insert a paragraph break (double newline) at cursor position
+function insertBreak(taId) {
+  const ta = document.getElementById(taId);
+  if (!ta) return;
+  const s = ta.selectionStart;
+  ta.value = ta.value.substring(0, s) + '\n\n' + ta.value.substring(s);
+  ta.selectionStart = ta.selectionEnd = s + 2;
+  ta.focus();
+  update();
+}
+
 // Insert [[text|url]] at cursor or wrap selection in textarea
 function insertLink(taId, textInputId, urlInputId) {
   const ta = document.getElementById(taId);
@@ -437,6 +458,9 @@ function addSprint(containerId) {
     + '<div><label>Sprint name</label><input type="text" id="' + id + '-name" placeholder="e.g. Sprint 24" oninput="update()"></div>'
     + '<div><label>Dates</label><input type="text" id="' + id + '-dates" placeholder="e.g. Jan 6 – Jan 17" oninput="update()"></div>'
     + '</div>'
+    + '<label>Description / blurb (optional)</label>'
+    + '<textarea id="' + id + '-desc" rows="3" placeholder="Add a short summary or context paragraph. Use ↵ Line break for multiple paragraphs." oninput="update()" style="margin-bottom:6px;"></textarea>'
+    + '<div style="margin-bottom:10px;"><button class="btn-insert-link" style="background:#B38693;font-size:11px;" onclick="insertBreak(\'' + id + '-desc\')">↵ Line break</button></div>'
     + '<label>Items (one per line)</label>'
     + '<div id="items-' + id + '">'
     + buildLineItem(itemId, 'Feature or fix description')
@@ -492,6 +516,7 @@ function addAccolade() {
     + '<label>Recognition</label>'
     + '<textarea id="' + taId + '" rows="2" placeholder="What they did. Be specific and genuine." oninput="update()"></textarea>'
     + '<div class="link-inserter" style="margin-top:6px;">'
+    + '<button class="btn-insert-link" style="background:#B38693;" onclick="insertBreak(\'' + taId + '\')">↵ Line break</button>'
     + '<span class="li-label">Insert link:</span>'
     + '<input type="text" id="' + id + '-lt" placeholder="Link text">'
     + '<input type="text" id="' + id + '-lu" placeholder="https://...">'
@@ -523,8 +548,9 @@ function addProcess() {
     + '<input type="text" id="' + id + '-topic" placeholder="e.g. How We Use ADO" style="margin-bottom:10px;" oninput="update()">'
     + '<label>Explanation</label>'
     + '<textarea id="' + taId + '" rows="4" placeholder="Explain the process in plain language." oninput="update()"></textarea>'
-    + '<div class="link-hint">Tip: highlight text above, then insert a link below.</div>'
+    + '<div class="link-hint">Tip: highlight text above to wrap in a link, or use ↵ to start a new paragraph.</div>'
     + '<div class="link-inserter">'
+    + '<button class="btn-insert-link" style="background:#B38693;" onclick="insertBreak(\'' + taId + '\')">↵ Line break</button>'
     + '<span class="li-label">Insert link:</span>'
     + '<input type="text" id="' + id + '-lt" placeholder="Link text">'
     + '<input type="text" id="' + id + '-lu" placeholder="https://...">'
@@ -579,7 +605,8 @@ function addHire() {
     + '<div><label>Role</label><input type="text" id="' + id + '-role" placeholder="Job title" oninput="update()"></div>'
     + '</div>'
     + '<label>About them</label>'
-    + '<input type="text" id="' + id + '-bio" placeholder="1 sentence about them or what they\'ll be working on" style="margin-bottom:12px;" oninput="update()">'
+    + '<textarea id="' + id + '-bio" rows="3" placeholder="A few sentences about them or what they\'ll be working on. Use ↵ Line break for multiple paragraphs." style="margin-bottom:4px;" oninput="update()"></textarea>'
+    + '<div style="margin-bottom:10px;"><button class="btn-insert-link" style="background:#B38693;font-size:11px;" onclick="insertBreak(\'' + id + '-bio\')">↵ Line break</button></div>'
     + '<div style="margin-bottom:12px;">'
     + '<label>Photo (optional — shows directly on the newsletter)</label>'
     + '<input type="file" id="hpf-' + id + '" accept="image/*" style="font-size:12px;width:100%;margin-top:4px;">'
@@ -630,7 +657,7 @@ function update() {
   if (!hidden('lindsay')) {
     const q = val('quip');
     html += '<div class="prev-quip"><div class="ql">From the Desk of Product</div>'
-      + (q ? '<p>' + renderLinks(q) + '</p>' : '<p class="empty">[Opening quip will appear here]</p>') + '</div>';
+      + (q ? renderParagraphs(q) : '<p class="empty">[Opening quip will appear here]</p>') + '</div>';
   }
 
   // Product Updates
@@ -650,8 +677,10 @@ function update() {
           return '<li>' + renderLineItem(inp.value.trim(), urlInp ? urlInp.value.trim() : '') + '</li>';
         }).filter(Boolean).join('');
         const galleryUrl = val(bid+'-gallery');
+        const desc = val(bid+'-desc');
         html += '<div class="prev-sprint"><div class="prev-sprint-name">' + escH(name) + (dates?' &bull; '+escH(dates):'') + '</div>'
-          + (itemsHTML ? '<ul>' + itemsHTML + '</ul>' : '<p class="empty">[No items yet]</p>')
+          + (desc ? renderParagraphs(desc) : '')
+          + (itemsHTML ? '<ul>' + itemsHTML + '</ul>' : (!desc ? '<p class="empty">[No items yet]</p>' : ''))
           + (galleryUrl ? '<a href="'+escA(galleryUrl)+'" style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#80515F;background:#F4EDEF;border:1px solid #DCC7BE;border-radius:6px;padding:5px 12px;text-decoration:none;">&#128248; View Gallery</a>' : '')
           + '</div>';
       });
@@ -683,8 +712,10 @@ function update() {
           return '<li>' + renderLineItem(inp.value.trim(), urlInp ? urlInp.value.trim() : '') + '</li>';
         }).filter(Boolean).join('');
         const galleryUrl2 = val(bid+'-gallery');
+        const desc2 = val(bid+'-desc');
         html += '<div class="prev-sprint"><div class="prev-sprint-name">' + escH(name) + (dates?' &bull; '+escH(dates):'') + '</div>'
-          + (itemsHTML ? '<ul>' + itemsHTML + '</ul>' : '<p class="empty">[No items yet]</p>')
+          + (desc2 ? renderParagraphs(desc2) : '')
+          + (itemsHTML ? '<ul>' + itemsHTML + '</ul>' : (!desc2 ? '<p class="empty">[No items yet]</p>' : ''))
           + (galleryUrl2 ? '<a href="'+escA(galleryUrl2)+'" style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#80515F;background:#F4EDEF;border:1px solid #DCC7BE;border-radius:6px;padding:5px 12px;text-decoration:none;">&#128248; View Gallery</a>' : '')
           + '</div>';
       });
@@ -704,7 +735,7 @@ function update() {
         const bid = b.id.replace('blk-','');
         const bg = i%2===1 ? ' style="background:#F4EDEF"' : '';
         const textVal = val(bid+'-text');
-        html += '<tr><td'+bg+'>'+escH(val(bid+'-name')||'[Name]')+'</td><td'+bg+'>'+escH(val(bid+'-role')||'[Role]')+'</td><td'+bg+'>'+(textVal ? renderLinks(textVal) : '[Recognition]')+'</td></tr>';
+        html += '<tr><td'+bg+'>'+escH(val(bid+'-name')||'[Name]')+'</td><td'+bg+'>'+escH(val(bid+'-role')||'[Role]')+'</td><td'+bg+'>'+(textVal ? renderParagraphs(textVal) : '[Recognition]')+'</td></tr>';
       });
       html += '</tbody></table></div>';
     }
@@ -720,7 +751,7 @@ function update() {
         const topic = val(bid+'-topic');
         const body = val(bid+'-body');
         html += '<div class="prev-process"><div class="prev-process-topic'+(topic?'':' empty')+'">'+escH(topic||'[Topic]')+'</div>'
-          + '<p class="'+(body?'':'empty')+'">'+(body ? renderLinks(body) : '[Explanation]')+'</p></div>';
+          + (body ? renderParagraphs(body) : '<p class="empty">[Explanation]</p>') + '</div>';
       });
       html += '</div>';
     }
@@ -804,7 +835,7 @@ function update() {
                 : '<div style="width:52px;height:52px;border-radius:50%;background:#80515F;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#fff;flex-shrink:0;">'+escH(initials)+'</div>')
             + '<div>'
             + (name||role ? '<p style="font-weight:600;font-size:14px;margin-bottom:2px;">'+escH(name)+(role?' &mdash; '+escH(role):'')+' </p>' : '')
-            + (bio ? '<p style="color:#5F3C46;font-size:13px;">'+escH(bio)+'</p>' : '')
+            + (bio ? renderParagraphs(bio) : '')
             + '</div>'
             + '</div>'
             + ((q1||a1||q2||a2) ? '<div style="background:#F4EDEF;border-radius:6px;padding:10px 14px;margin-top:6px;">' : '')
@@ -1290,14 +1321,6 @@ function downloadPDF() {
 }
 
 
-// ── renderLinks + insertLink ──────────────────────────────────────────
-function renderLinks(text) {
-  const escaped = escH(text);
-  return escaped.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, function(_, lt, url) {
-    const su = url.trim().startsWith('http') ? url.trim() : 'https://' + url.trim();
-    return '<a href="' + su + '" style="color:#80515F;">' + lt.trim() + '</a>';
-  });
-}
 function insertLink(taId, textInputId, urlInputId) {
   const ta = document.getElementById(taId);
   const lt = document.getElementById(textInputId).value.trim();
