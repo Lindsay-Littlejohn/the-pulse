@@ -163,6 +163,22 @@
     </div>
   </div>
 
+  <!-- CLIENT LOVE -->
+  <div class="section-wrap" id="sec-clientlove">
+    <div class="section-head">
+      <div class="section-head-left" onclick="toggleSec('clientlove')">
+        <span class="sec-label">💬 Client Love</span>
+        <span class="sec-arrow" id="arr-clientlove">▾</span>
+      </div>
+      <button class="btn-remove-sec" onclick="removeSec('clientlove','Client Love')">Remove section</button>
+    </div>
+    <div class="section-body" id="body-clientlove">
+      <p style="font-size:12px;color:#B38693;font-style:italic;margin-bottom:12px;">Add positive feedback, quotes, or shoutouts from clients.</p>
+      <div id="clientlove-wrap"></div>
+      <button class="btn-add" onclick="addClientQuote()">+ Add client quote</button>
+    </div>
+  </div>
+
   <!-- PRODUCT UPDATES -->
   <div class="section-wrap" id="sec-updates">
     <div class="section-head">
@@ -210,22 +226,6 @@
     <div class="section-body" id="body-accolades">
       <div id="accolades-wrap"></div>
       <button class="btn-add" onclick="addAccolade()">+ Add person</button>
-    </div>
-  </div>
-
-  <!-- CLIENT LOVE -->
-  <div class="section-wrap" id="sec-clientlove">
-    <div class="section-head">
-      <div class="section-head-left" onclick="toggleSec('clientlove')">
-        <span class="sec-label">💬 Client Love</span>
-        <span class="sec-arrow" id="arr-clientlove">▾</span>
-      </div>
-      <button class="btn-remove-sec" onclick="removeSec('clientlove','Client Love')">Remove section</button>
-    </div>
-    <div class="section-body" id="body-clientlove">
-      <p style="font-size:12px;color:#B38693;font-style:italic;margin-bottom:12px;">Add positive feedback, quotes, or shoutouts from clients.</p>
-      <div id="clientlove-wrap"></div>
-      <button class="btn-add" onclick="addClientQuote()">+ Add client quote</button>
     </div>
   </div>
 
@@ -701,6 +701,35 @@ function update() {
       + (q ? renderParagraphs(q) : '<p class="empty">[Opening quip will appear here]</p>') + '</div>';
   }
 
+  // Client Love
+  if (!hidden('clientlove')) {
+    const blocks = document.querySelectorAll('#clientlove-wrap .dyn-block');
+    if (blocks.length) {
+      html += '<div class="prev-section"><div class="prev-label">💬 Client Love</div><hr class="prev-rule"><h2>Straight from our clients</h2>';
+      blocks.forEach(b => {
+        const bid = b.id.replace('blk-','');
+        const client = val(bid+'-client') || '[Client]';
+        const context = val(bid+'-context');
+        const feature = val(bid+'-feature');
+        const quote = val(bid+'-quote');
+        html += '<div style="background:#6B3D4A;border-radius:14px;padding:28px 30px;margin-bottom:14px;position:relative;">'
+          + '<div style="font-size:56px;line-height:0.5;color:rgba(255,255,255,0.15);font-family:Georgia,serif;margin-bottom:14px;">&ldquo;</div>'
+          + (quote
+              ? '<p style="color:#F4EDEF;font-size:15px;line-height:1.65;margin-bottom:20px;">' + renderLinks(quote) + '</p>'
+              : '<p style="color:rgba(244,237,239,0.4);font-size:15px;font-style:italic;">[Quote will appear here]</p>')
+          + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">'
+          + '<div>'
+          + '<div style="font-size:14px;font-weight:700;color:#fff;">' + escH(client) + '</div>'
+          + (context ? '<div style="font-size:11px;color:#B38693;margin-top:2px;">' + escH(context) + '</div>' : '')
+          + '</div>'
+          + (feature ? '<div style="background:rgba(179,134,147,0.25);border:1px solid rgba(179,134,147,0.4);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;color:#F4EDEF;">' + escH(feature) + '</div>' : '')
+          + '</div>'
+          + '</div>';
+      });
+      html += '</div>';
+    }
+  }
+
   // Product Updates
   if (!hidden('updates')) {
     const blocks = document.querySelectorAll('#sprints-wrap .dyn-block');
@@ -779,35 +808,6 @@ function update() {
         html += '<tr><td'+bg+'>'+escH(val(bid+'-name')||'[Name]')+'</td><td'+bg+'>'+escH(val(bid+'-role')||'[Role]')+'</td><td'+bg+'>'+(textVal ? renderParagraphs(textVal) : '[Recognition]')+'</td></tr>';
       });
       html += '</tbody></table></div>';
-    }
-  }
-
-  // Client Love
-  if (!hidden('clientlove')) {
-    const blocks = document.querySelectorAll('#clientlove-wrap .dyn-block');
-    if (blocks.length) {
-      html += '<div class="prev-section"><div class="prev-label">💬 Client Love</div><hr class="prev-rule"><h2>Straight from our clients</h2>';
-      blocks.forEach(b => {
-        const bid = b.id.replace('blk-','');
-        const client = val(bid+'-client') || '[Client]';
-        const context = val(bid+'-context');
-        const feature = val(bid+'-feature');
-        const quote = val(bid+'-quote');
-        html += '<div style="background:#6B3D4A;border-radius:14px;padding:28px 30px;margin-bottom:14px;position:relative;">'
-          + '<div style="font-size:56px;line-height:0.5;color:rgba(255,255,255,0.15);font-family:Georgia,serif;margin-bottom:14px;">&ldquo;</div>'
-          + (quote
-              ? '<p style="color:#F4EDEF;font-size:15px;line-height:1.65;margin-bottom:20px;">' + renderLinks(quote) + '</p>'
-              : '<p style="color:rgba(244,237,239,0.4);font-size:15px;font-style:italic;">[Quote will appear here]</p>')
-          + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">'
-          + '<div>'
-          + '<div style="font-size:14px;font-weight:700;color:#fff;">' + escH(client) + '</div>'
-          + (context ? '<div style="font-size:11px;color:#B38693;margin-top:2px;">' + escH(context) + '</div>' : '')
-          + '</div>'
-          + (feature ? '<div style="background:rgba(179,134,147,0.25);border:1px solid rgba(179,134,147,0.4);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;color:#F4EDEF;">' + escH(feature) + '</div>' : '')
-          + '</div>'
-          + '</div>';
-      });
-      html += '</div>';
     }
   }
 
