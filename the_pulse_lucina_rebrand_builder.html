@@ -525,6 +525,13 @@ function addAccolade() {
     + '<span class="dyn-block-title">Accolade</span>'
     + '<button class="btn-rm-block" onclick="rmEl(\'blk-' + id + '\')">✕ Remove</button>'
     + '</div>'
+    + '<div style="margin-bottom:10px;">'
+    + '<label>Card type</label>'
+    + '<div style="display:flex;gap:8px;margin-top:4px;">'
+    + '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;font-weight:400;"><input type="radio" name="hiretype-' + id + '" id="ht-new-' + id + '" value="new" '+(type==='new'?'checked':'')+' onchange="update()"> New Hire</label>'
+    + '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;font-weight:400;"><input type="radio" name="hiretype-' + id + '" id="ht-spot-' + id + '" value="spotlight" '+(type==='spotlight'?'checked':'')+' onchange="update()"> Get to Know the Team</label>'
+    + '</div>'
+    + '</div>'
     + '<div class="two-col" style="margin-bottom:10px;">'
     + '<div><label>Name</label><input type="text" id="' + id + '-name" placeholder="Team member name" oninput="update()"></div>'
     + '<div><label>Role</label><input type="text" id="' + id + '-role" placeholder="Role" oninput="update()"></div>'
@@ -631,15 +638,25 @@ function addRelease() {
 }
 
 // ── New hire ──────────────────────────────────────────────────────────
-function addHire() {
+function addHire(type) {
+  type = type || 'new';
   const c = document.getElementById('hires-wrap');
   const id = uid();
   const div = document.createElement('div');
   div.className = 'dyn-block';
   div.id = 'blk-' + id;
+  const typeLabel = type === 'spotlight' ? 'Team Spotlight' : 'New Hire';
+  const typeBadgeColor = type === 'spotlight' ? '#B38693' : '#80515F';
   div.innerHTML = '<div class="dyn-block-head">'
-    + '<span class="dyn-block-title">New hire</span>'
+    + '<span class="dyn-block-title">'+typeLabel+'</span>'
     + '<button class="btn-rm-block" onclick="rmEl(\'blk-' + id + '\')">✕ Remove</button>'
+    + '</div>'
+    + '<div style="margin-bottom:10px;">'
+    + '<label>Card type</label>'
+    + '<div style="display:flex;gap:8px;margin-top:4px;">'
+    + '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;font-weight:400;"><input type="radio" name="hiretype-' + id + '" id="ht-new-' + id + '" value="new" '+(type==='new'?'checked':'')+' onchange="update()"> New Hire</label>'
+    + '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;font-weight:400;"><input type="radio" name="hiretype-' + id + '" id="ht-spot-' + id + '" value="spotlight" '+(type==='spotlight'?'checked':'')+' onchange="update()"> Get to Know the Team</label>'
+    + '</div>'
     + '</div>'
     + '<div class="two-col" style="margin-bottom:10px;">'
     + '<div><label>Name</label><input type="text" id="' + id + '-name" placeholder="Full name" oninput="update()"></div>'
@@ -886,8 +903,16 @@ function update() {
     if (hireBlocks.length || funLines.length) {
       html += '<div class="prev-section"><div class="prev-label">Team</div><hr class="prev-rule"><h2>Welcomes, milestones &amp; moments</h2>';
       if (hireBlocks.length) {
-        html += '<p style="font-size:11px;font-weight:600;color:#80515F;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">New faces</p>';
-        hireBlocks.forEach(b => {
+        // Split into new hires vs spotlights
+        const newHireBlocks = [...hireBlocks].filter(b => {
+          const radio = b.querySelector('input[type="radio"]:checked');
+          return !radio || radio.value === 'new';
+        });
+        const spotlightBlocks = [...hireBlocks].filter(b => {
+          const radio = b.querySelector('input[type="radio"]:checked');
+          return radio && radio.value === 'spotlight';
+        });
+        const renderHireCard = (b) => {
           const bid = b.id.replace('blk-','');
           const name = val(bid+'-name');
           const role = val(bid+'-role');
@@ -915,7 +940,15 @@ function update() {
             + (a2 ? '<p style="font-size:13px;color:#B38693;font-style:italic;">'+escH(a2)+'</p>' : '')
             + ((q1||a1||q2||a2) ? '</div>' : '')
             + '</div>';
-        });
+        };
+        if (newHireBlocks.length) {
+          html += '<p style="font-size:11px;font-weight:600;color:#80515F;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">New Faces</p>';
+          newHireBlocks.forEach(b => renderHireCard(b));
+        }
+        if (spotlightBlocks.length) {
+          html += '<p style="font-size:11px;font-weight:600;color:#80515F;text-transform:uppercase;letter-spacing:0.5px;margin:'+(newHireBlocks.length?'16px':'0')+' 0 10px;">Get to Know the Team</p>';
+          spotlightBlocks.forEach(b => renderHireCard(b));
+        }
       }
       if (funLines.length) {
         html += '<p style="font-size:11px;font-weight:600;color:#80515F;text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 6px;">From the chat</p>';
@@ -968,7 +1001,7 @@ function collectState() {
     accolades: collectBlocks('#accolades-wrap', ['name','role','text'], null),
     processes: collectBlocks('#process-wrap', ['topic','body'], null),
     releases: collectBlocks('#releases-wrap', ['ver','desc','url','linktxt'], null),
-    hires: collectBlocks('#hires-wrap', ['name','role','bio','q1','a1','q2','a2'], null),
+    hires: collectBlocks('#hires-wrap', ['name','role','bio','q1','a1','q2','a2'], null).map(function(s,i,arr) { var b = document.querySelectorAll('#hires-wrap .dyn-block')[i]; if(b){ var radio = b.querySelector('input[type="radio"]:checked'); s.hiretype = radio ? radio.value : 'new'; } return s; }),
     hirePhotos: (function() {
       const photos = {};
       document.querySelectorAll('#hires-wrap .dyn-block').forEach(b => {
@@ -1124,6 +1157,7 @@ function restoreState(state) {
     if (s.q1) document.getElementById(bid+'-q1').value = s.q1;
     if (s.a1) document.getElementById(bid+'-a1').value = s.a1;
     if (s.q2) document.getElementById(bid+'-q2').value = s.q2;
+    if (s.hiretype) { var radio = b.querySelector('input[value="'+s.hiretype+'"]'); if(radio) radio.checked = true; }
     if (s.a2) document.getElementById(bid+'-a2').value = s.a2;
   });
   // Restore hire photos
